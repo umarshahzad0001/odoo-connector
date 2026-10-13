@@ -51,6 +51,14 @@ jobs:
           unzip -l "$FILE" | grep -v node_modules/ || true
           echo "node_modules entries: $(unzip -l "$FILE" | grep -c node_modules/)"
 
+      - name: Test the packed bundle itself
+        run: |
+          d=$(mktemp -d)
+          unzip -q "$FILE" -d "$d"
+          mkdir "$d/test"
+          cp test/profiles.test.mjs "$d/test/"
+          cd "$d" && node --test test/profiles.test.mjs
+
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ env.FILE }}
