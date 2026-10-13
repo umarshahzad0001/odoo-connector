@@ -1,0 +1,69 @@
+name: Build and release
+
+# Push a tag like v0.2.1 (it must match the version in manifest.json) and this
+# builds odoo-connector-<version>.mcpb and attaches it to a GitHub release.
+# Run it by hand to build without releasing, or give release_tag to attach the
+# build to an existing release.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Attach the build to this release tag (leave empty for a build-only dry run)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm test
+
+      - name: Check versions agree
+        run: |
+          v=$(node -p "require('./manifest.json').version")
+          [ "$(node -p "require('./package.json').version")" = "$v" ] || { echo "package.json and manifest.json versions differ"; exit 1; }
+          if [ "$GITHUB_REF_TYPE" = "tag" ] && [ "$GITHUB_REF_NAME" != "v$v" ]; then
+            echo "tag $GITHUB_REF_NAME does not match manifest version v$v"; exit 1
+          fi
+          echo "FILE=odoo-connector-$v.mcpb" >> "$GITHUB_ENV"
+
+      - run: npx --yes @anthropic-ai/mcpb@2.1.2 validate manifest.json
+
+      - run: npx --yes @anthropic-ai/mcpb@2.1.2 pack . "$FILE"
+
+      - name: Show what went into the bundle
+        run: |
+          ls -l "$FILE"
+          unzip -l "$FILE" | grep -v node_modules/ || true
+          echo "node_modules entries: $(unzip -l "$FILE" | grep -c node_modules/)"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.FILE }}
+          path: ${{ env.FILE }}
+
+      - name: Publish to the release
+        if: github.ref_type == 'tag' || inputs.release_tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.release_tag || github.ref_name }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$FILE" --clobber
+          else
+            gh release create "$TAG" "$FILE" --title "$TAG" --generate-notes
+          fi

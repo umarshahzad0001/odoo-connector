@@ -109,7 +109,7 @@ If your session can't take that flag, set `CLAUDE_CODE_PLUGIN_DIRS` to the folde
 You need Node.js 18 or newer.
 
 ```
-npm install
+npm ci
 npm test
 ```
 
@@ -118,10 +118,21 @@ The tests start the real server against two fake Odoo instances and check profil
 To produce the `.mcpb` file, use Anthropic's packer:
 
 ```
-npx @anthropic-ai/mcpb pack
+npx @anthropic-ai/mcpb pack . odoo-connector-0.2.0.mcpb
 ```
 
 Run it in this folder. The file it writes is what you install in step 3 above.
+
+### Releasing
+
+A GitHub Action builds the release file. Bump `version` in both `manifest.json` and `package.json`, commit, then push a tag that matches:
+
+```
+git tag v0.2.1
+git push origin v0.2.1
+```
+
+The workflow runs the tests, validates the manifest, packs the `.mcpb` and attaches it to the release for that tag. You can also start it by hand from the Actions tab to get the file as a build artifact without releasing.
 
 ## License
 
