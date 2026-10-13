@@ -12,7 +12,7 @@ You need Claude Desktop and an Odoo user with an API key.
 
 **1. Get an API key from Odoo.** In Odoo, open your user menu, then Preferences, then Account Security, then New API Key. Copy it somewhere; Odoo only shows it once.
 
-**2. Get the extension file.** Build `odoo-connector-0.2.0.mcpb` yourself (see [Build from source](#build-from-source)), or download it if you've published a release.
+**2. Get the extension file.** Download `odoo-connector-0.2.0.mcpb` from the [latest release](https://github.com/umarshahzad0001/odoo-connector/releases/latest), or build it yourself (see [Build from source](#build-from-source)).
 
 **3. Install it.** Double-click the `.mcpb` file, or drag it into Claude Desktop's Settings, Extensions page, and click Install.
 
