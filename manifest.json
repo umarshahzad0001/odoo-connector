@@ -1,0 +1,110 @@
+{
+  "manifest_version": "0.3",
+  "name": "odoo-connector",
+  "display_name": "Odoo Connector",
+  "version": "0.2.0",
+  "description": "Query and edit your Odoo database through Claude via Odoo's built-in JSON-RPC API. No server-side module required.",
+  "long_description": "Connects Claude to any Odoo 14–18 instance using Odoo's built-in external API (JSON-RPC over HTTPS). Nothing is installed on the Odoo server — the connector runs locally and authenticates as your user with an API key, so it can do exactly what your Odoo permissions allow. Save several Odoo instances at once in a profiles file; tell Claude which to use or let it pick from the profile descriptions. No profile is a default. Provides tools to introspect models and fields, search and read records, count, call arbitrary model methods, and (optionally) create/update/delete. Write operations are blocked per profile unless that profile sets allow_write.",
+  "author": {
+    "name": "Muhammad Umar Shahzad"
+  },
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/server/index.js"
+      ],
+      "env": {
+        "ODOO_PROFILES_FILE": "${user_config.profiles_file}"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "odoo_list_profiles",
+      "description": "List saved Odoo profiles (never keys)."
+    },
+    {
+      "name": "odoo_add_profile",
+      "description": "Save a new profile (login-checked, always read-only)."
+    },
+    {
+      "name": "odoo_update_profile",
+      "description": "Change a profile's description, username or api_key."
+    },
+    {
+      "name": "odoo_remove_profile",
+      "description": "Delete a saved profile and its key."
+    },
+    {
+      "name": "odoo_whoami",
+      "description": "Confirm connection: server version and user id."
+    },
+    {
+      "name": "odoo_find_models",
+      "description": "Find models by name or label."
+    },
+    {
+      "name": "odoo_fields_get",
+      "description": "Introspect a model's fields and technical names."
+    },
+    {
+      "name": "odoo_search_read",
+      "description": "Search records and read fields."
+    },
+    {
+      "name": "odoo_search_count",
+      "description": "Count records matching a domain."
+    },
+    {
+      "name": "odoo_read",
+      "description": "Read fields for records by id."
+    },
+    {
+      "name": "odoo_execute",
+      "description": "Call any model method (execute_kw)."
+    },
+    {
+      "name": "odoo_create",
+      "description": "Create a record (needs allow_write on the profile)."
+    },
+    {
+      "name": "odoo_write",
+      "description": "Update records (needs allow_write on the profile)."
+    },
+    {
+      "name": "odoo_unlink",
+      "description": "Delete records (needs allow_write on the profile)."
+    }
+  ],
+  "keywords": [
+    "odoo",
+    "erp",
+    "json-rpc",
+    "database",
+    "accounting"
+  ],
+  "license": "MIT",
+  "compatibility": {
+    "claude_desktop": ">=0.10.0",
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ],
+    "runtimes": {
+      "node": ">=18.0.0"
+    }
+  },
+  "user_config": {
+    "profiles_file": {
+      "type": "file",
+      "title": "Profiles file",
+      "description": "JSON file of saved Odoo profiles: { \"name\": { \"description\", \"url\", \"db\", \"username\", \"api_key\", \"allow_write\" } }. Keys are stored in this file in plain text; keep it outside any repo.",
+      "required": true
+    }
+  },
+  "privacy_policies": []
+}

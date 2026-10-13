@@ -1,0 +1,15 @@
+{
+  "name": "odoo-profiles",
+  "version": "0.1.0",
+  "description": "Manage Odoo Connector profiles in a pane (add, edit, toggle writes, remove) and show which profile each Odoo tool call uses.",
+  "author": { "name": "Muhammad Umar Shahzad" },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "profiles_file": {
+      "type": "string",
+      "title": "Profiles file",
+      "description": "Path of the Odoo Connector profiles.json. Empty means %APPDATA%\\odoo-connector\\profiles.json.",
+      "default": ""
+    }
+  }
+}
