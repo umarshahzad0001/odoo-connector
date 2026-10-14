@@ -96,13 +96,13 @@ API keys live in `profiles.json` in plain text. Keep that file private. If you p
 
 [`claude-mod/odoo-profiles`](claude-mod/odoo-profiles) is a small Claude Code mod that adds a `/odoo-profiles` pane for adding, editing, removing and write-enabling profiles without touching the JSON by hand. It also prints a line for every Odoo tool call showing which profile, instance and mode it used, with a warning marker when a write tool runs against a writable profile.
 
-It uses Claude Code's function-hook mod API, which is early access and may change between releases. Load it from a checkout with:
+It uses Claude Code's function-hook mod API, which is early access and may change between releases. Install it from a terminal Claude Code session:
 
 ```
-claude --plugin-dir claude-mod/odoo-profiles
+/plugin install odoo-profiles --marketplace umarshahzad0001/odoo-connector
 ```
 
-If your session can't take that flag, set `CLAUDE_CODE_PLUGIN_DIRS` to the folder instead. On Windows it edits `%APPDATA%\odoo-connector\profiles.json` by default; set the mod's `profiles_file` option if yours lives elsewhere (and on any other system). The call lines only appear for tools named `mcp__Odoo_Connector__*`, which is what Claude Desktop calls this extension.
+The install command doesn't run in the Desktop Code tab, but a plugin installed this way loads there too. To try it straight from a checkout instead, start Claude Code with `claude --plugin-dir claude-mod/odoo-profiles`, or set `CLAUDE_CODE_PLUGIN_DIRS` to that folder. On Windows it edits `%APPDATA%\odoo-connector\profiles.json` by default; set the mod's `profiles_file` option if yours lives elsewhere (and on any other system). The call lines only appear for tools named `mcp__Odoo_Connector__*`, which is what Claude Desktop calls this extension.
 
 ## Build from source
 

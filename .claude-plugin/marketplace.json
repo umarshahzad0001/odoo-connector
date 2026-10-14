@@ -1,0 +1,12 @@
+{
+  "name": "odoo-connector",
+  "owner": { "name": "Muhammad Umar Shahzad" },
+  "description": "Claude Code mods that go with the Odoo Connector extension.",
+  "plugins": [
+    {
+      "name": "odoo-profiles",
+      "source": "./claude-mod/odoo-profiles",
+      "description": "Manage Odoo Connector profiles in a pane and show which profile each Odoo tool call uses."
+    }
+  ]
+}
