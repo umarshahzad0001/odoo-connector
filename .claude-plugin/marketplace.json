@@ -1,8 +1,13 @@
 {
   "name": "odoo-connector",
   "owner": { "name": "Muhammad Umar Shahzad" },
-  "description": "Claude Code mods that go with the Odoo Connector extension.",
+  "description": "Odoo Connector for Claude Code: the connector itself, and a profiles pane.",
   "plugins": [
+    {
+      "name": "odoo-connector",
+      "source": "./plugins/odoo-connector",
+      "description": "Query and edit Odoo through its built-in JSON-RPC API, in every Claude Code session. Needs Node.js 18+."
+    },
     {
       "name": "odoo-profiles",
       "source": "./claude-mod/odoo-profiles",

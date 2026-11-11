@@ -1,0 +1,13 @@
+{
+  "name": "odoo-connector",
+  "version": "0.3.0",
+  "description": "Query and edit Odoo through its built-in JSON-RPC API, in every Claude Code session. Needs Node.js 18+. Profiles live in %APPDATA%\\odoo-connector\\profiles.json on Windows and ~/.config/odoo-connector/profiles.json elsewhere (or set ODOO_PROFILES_FILE).",
+  "author": { "name": "Muhammad Umar Shahzad" },
+  "license": "MIT",
+  "mcpServers": {
+    "odoo": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/server.mjs"]
+    }
+  }
+}

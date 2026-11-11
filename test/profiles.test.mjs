@@ -33,13 +33,16 @@ function fakeOdoo(uid, calls) {
   });
 }
 
-async function connect(profilesFile) {
+const SERVER = join(here, "..", "server", "index.js");
+const BUNDLE = join(here, "..", "plugins", "odoo-connector", "server.mjs");
+
+async function connect(profilesFile, env = {}, script = SERVER) {
   const client = new Client({ name: "t", version: "0" });
   await client.connect(
     new StdioClientTransport({
       command: process.execPath,
-      args: [join(here, "..", "server", "index.js")],
-      env: { ...process.env, ODOO_PROFILES_FILE: profilesFile },
+      args: [script],
+      env: { ...process.env, ODOO_PROFILES_FILE: profilesFile, ...env },
     })
   );
   return client;
@@ -118,6 +121,63 @@ test("bad profiles file gives a clear error", async () => {
     const r = await call(client, "odoo_list_profiles");
     assert.equal(r.isError, true);
     assert.match(text(r), /Profile 'x' is missing: db, username, api_key/);
+  } finally {
+    await client.close();
+  }
+});
+
+test("no profiles file set: default per-OS path, created on first add", async () => {
+  const calls = [];
+  const a = await fakeOdoo(44, calls);
+  const url = `http://127.0.0.1:${a.address().port}`;
+  const home = mkdtempSync(join(tmpdir(), "odoo-home-"));
+  const add = (client) => call(client, "odoo_add_profile", { name: "p", url, db: "d", username: "u", api_key: "good" });
+  const cases = [
+    { env: { APPDATA: join(home, "win") }, file: join(home, "win", "odoo-connector", "profiles.json") },
+    { env: { APPDATA: "", XDG_CONFIG_HOME: join(home, "xdg") }, file: join(home, "xdg", "odoo-connector", "profiles.json") },
+    { env: { APPDATA: "", XDG_CONFIG_HOME: "", HOME: home, USERPROFILE: home }, file: join(home, ".config", "odoo-connector", "profiles.json") },
+  ];
+  try {
+    for (const { env, file } of cases) {
+      const client = await connect("", env);
+      try {
+        assert.notEqual((await add(client)).isError, true);
+        assert.equal(JSON.parse(readFileSync(file, "utf8")).p.db, "d");
+      } finally {
+        await client.close();
+      }
+    }
+  } finally {
+    a.close();
+  }
+});
+
+test("a quoted path (Windows 'Copy as path') still works", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "odoo-profiles-"));
+  const file = join(dir, "profiles.json");
+  writeFileSync(file, JSON.stringify({ q: { description: "quoted", url: "http://h", db: "d", username: "u", api_key: "k" } }));
+  const client = await connect(`"${file}"`);
+  try {
+    assert.match(text(await call(client, "odoo_list_profiles")), /quoted/);
+  } finally {
+    await client.close();
+  }
+});
+
+test("the plugin's bundled server is the same server", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "odoo-profiles-"));
+  const file = join(dir, "profiles.json");
+  writeFileSync(file, JSON.stringify({ b: { description: "bundled", url: "http://h", db: "d", username: "u", api_key: "k" } }));
+  const client = await connect(file, {}, BUNDLE);
+  try {
+    const names = (await client.listTools()).tools.map((t) => t.name).sort();
+    const src = await connect(file);
+    try {
+      assert.deepEqual(names, (await src.listTools()).tools.map((t) => t.name).sort());
+    } finally {
+      await src.close();
+    }
+    assert.match(text(await call(client, "odoo_list_profiles")), /bundled/);
   } finally {
     await client.close();
   }

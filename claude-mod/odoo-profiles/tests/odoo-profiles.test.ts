@@ -5,10 +5,13 @@ const prod = { description: 'production', url: 'https://coolx.example.com', db: 
 const staging = { description: 'staging', url: 'https://stg.example.com', db: 'stg', username: 'admin', api_key: 'K2', allow_write: true }
 
 // The world beneath the plugin: an in-memory profiles file and a fake Odoo login.
-function world(on: On, start: unknown, login = { ok: true }) {
-  const w = { disk: start === undefined ? undefined : JSON.stringify(start), statuses: [] as (string | undefined)[], logs: [] as string[] }
-  mock.env(on, { APPDATA: 'C:\\Users\\t\\AppData\\Roaming' })
-  on('fs.exists', () => ({ value: w.disk !== undefined }))
+function world(on: On, start: unknown, login = { ok: true }, env: Record<string, string> = { APPDATA: 'C:\\Users\\t\\AppData\\Roaming' }) {
+  const w = { disk: start === undefined ? undefined : JSON.stringify(start), statuses: [] as (string | undefined)[], logs: [] as string[], paths: [] as string[] }
+  mock.env(on, env)
+  on('fs.exists', (_$, e) => {
+    w.paths.push(e.path)
+    return { value: w.disk !== undefined }
+  })
   on('fs.read', () => ({ value: w.disk ?? '' }))
   on('fs.write', (_$, e) => {
     w.disk = e.text
@@ -45,6 +48,29 @@ test('every Odoo call shows its profile, instance and mode', async ($, on) => {
   const before = w.logs.length
   await $.tool.call({ tool: 'Bash', tool_use_id: 't4', command: 'ls' } as never)
   expect(w.logs.length).toBe(before)
+})
+
+test('every way the connector is installed is recognised', async ($, on) => {
+  const { w } = world(on, { prod })
+  // desktop extension, user-scope mcpServers entry, Claude Code plugin
+  for (const prefix of ['mcp__Odoo_Connector__', 'mcp__odoo-connector__', 'mcp__plugin_odoo-connector_odoo__']) {
+    await $.tool.call({ tool: `${prefix}odoo_whoami`, tool_use_id: prefix } as never)
+    expect(w.logs.at(-1)).toContain('Odoo ▸ prod · coolx@coolx.example.com')
+  }
+  expect(w.logs.length).toBe(3)
+})
+
+test('macOS and Linux use ~/.config', async ($, on) => {
+  const { w } = world(on, { prod }, { ok: true }, { HOME: '/Users/t' })
+  await $.tool.call({ tool: `${CALL}odoo_whoami`, tool_use_id: 't1' } as never)
+  // the test host resolves the path in its own OS style, so compare with forward slashes
+  expect(w.paths.at(-1)?.replaceAll('\\', '/')).toMatch(/\/Users\/t\/\.config\/odoo-connector\/profiles\.json$/)
+})
+
+test('XDG_CONFIG_HOME wins over HOME', async ($, on) => {
+  const { w } = world(on, { prod }, { ok: true }, { HOME: '/home/t', XDG_CONFIG_HOME: '/home/t/cfg' })
+  await $.tool.call({ tool: `${CALL}odoo_whoami`, tool_use_id: 't1' } as never)
+  expect(w.paths.at(-1)?.replaceAll('\\', '/')).toMatch(/\/home\/t\/cfg\/odoo-connector\/profiles\.json$/)
 })
 
 test('a lone profile is named even when the call omits it', async ($, on) => {

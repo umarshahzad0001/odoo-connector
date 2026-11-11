@@ -4,7 +4,8 @@ import type { EngineInterface, Register } from 'claude-code'
 import type { Form, Profile, Profiles } from '../types'
 
 const PANE = 'odoo-profiles'
-const MCP = 'mcp__Odoo_Connector__'
+// Desktop extension (mcp__Odoo_Connector__), mcpServers entry (mcp__odoo-connector__), plugin (mcp__plugin_odoo-connector_odoo__).
+const ODOO_TOOL = /^mcp__.*odoo.*__(odoo_[a-z_]+)$/i
 const NO_PROFILE_TOOLS = ['odoo_list_profiles', 'odoo_add_profile', 'odoo_update_profile', 'odoo_remove_profile']
 const WRITE_TOOLS = ['odoo_create', 'odoo_write', 'odoo_unlink', 'odoo_execute']
 const EMPTY: Form = { name: '', url: '', db: '', username: '', api_key: '', description: '' }
@@ -20,7 +21,11 @@ let profilesFile = ''
 // shortcut: the file is rewritten in place, not atomically; the connector re-reads per call, so a read racing a save costs one call an error.
 async function profilesPath($: EngineInterface): Promise<string> {
   if (profilesFile !== '') return profilesFile
-  return `${await $.env.get('APPDATA')}\\odoo-connector\\profiles.json`
+  // Same default as the connector: %APPDATA% on Windows, else $XDG_CONFIG_HOME or ~/.config.
+  const appData = await $.env.get('APPDATA')
+  if (appData) return `${appData}\\odoo-connector\\profiles.json`
+  const config = (await $.env.get('XDG_CONFIG_HOME')) || `${await $.env.get('HOME')}/.config`
+  return `${config}/odoo-connector/profiles.json`
 }
 
 async function load($: EngineInterface): Promise<Profiles> {
@@ -172,9 +177,10 @@ export const register: Register = (on, options) => {
   })
 
   on('tool.call', async ($, e, next) => {
-    if (!e.tool.startsWith(MCP)) return next(e)
+    const tool = ODOO_TOOL.exec(e.tool)?.[1]
+    if (tool === undefined) return next(e)
     try {
-      const line = await describeCall($, e.tool.slice(MCP.length), e as unknown as Record<string, unknown>)
+      const line = await describeCall($, tool, e as unknown as Record<string, unknown>)
       $.ui.status(line)
       $.ui.log(line)
     } catch {

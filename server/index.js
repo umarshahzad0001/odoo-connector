@@ -9,7 +9,9 @@
  * removal in Odoo 20, but the /jsonrpc endpoint used here remains available.
  *
  * Several Odoo instances can be saved at once. They live in a JSON file whose
- * path comes from ODOO_PROFILES_FILE (the .mcpb "Profiles file" setting):
+ * path comes from ODOO_PROFILES_FILE (the .mcpb "Profiles file" setting) or,
+ * when that is empty, %APPDATA%\odoo-connector\profiles.json on Windows and
+ * $XDG_CONFIG_HOME/odoo-connector/profiles.json (else ~/.config/...) elsewhere:
  *   { "<name>": { description, url, db, username, api_key, allow_write } }
  * No profile is a default: every tool takes a `profile` argument, required
  * once two or more are saved. The file is re-read on each call, so edits
@@ -17,7 +19,8 @@
  */
 
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -35,7 +38,14 @@ process.on("unhandledRejection", (err) => {
 });
 
 // --- Configuration ---------------------------------------------------------
-const PROFILES_FILE = process.env.ODOO_PROFILES_FILE || "";
+// Surrounding quotes are dropped: Windows "Copy as path" adds them.
+const PROFILES_FILE =
+  (process.env.ODOO_PROFILES_FILE || "").trim().replace(/^"(.*)"$/, "$1") ||
+  join(
+    process.env.APPDATA || process.env.XDG_CONFIG_HOME || join(homedir(), ".config"),
+    "odoo-connector",
+    "profiles.json"
+  );
 
 const WRITE_METHOD_PREFIXES = ["create", "write", "unlink", "copy", "action_", "button_"];
 
@@ -44,9 +54,6 @@ const uidCache = new Map();
 
 // --- Profiles --------------------------------------------------------------
 function loadProfiles() {
-  if (!PROFILES_FILE) {
-    throw new Error("Profiles file is not set. Fill it in the extension settings.");
-  }
   let raw;
   try {
     raw = JSON.parse(readFileSync(PROFILES_FILE, "utf8"));

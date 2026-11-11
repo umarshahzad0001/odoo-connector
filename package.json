@@ -1,6 +1,6 @@
 {
   "name": "odoo-connector",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "MCP connector for Odoo via its built-in JSON-RPC external API (no server-side module).",
   "type": "module",
   "main": "server/index.js",
@@ -9,6 +9,7 @@
     "@modelcontextprotocol/sdk": "1.12.1"
   },
   "scripts": {
-    "test": "node --test test/profiles.test.mjs"
+    "test": "node --test test/profiles.test.mjs",
+    "build:plugin": "npx --yes esbuild@0.25.10 server/index.js --bundle --platform=node --format=esm --target=node18 --outfile=plugins/odoo-connector/server.mjs"
   }
 }

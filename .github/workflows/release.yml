@@ -32,6 +32,11 @@ jobs:
 
       - run: npm test
 
+      - name: Check the plugin's bundled server matches server/index.js
+        run: |
+          npm run build:plugin
+          git diff --exit-code plugins/odoo-connector/server.mjs || { echo "Run npm run build:plugin and commit plugins/odoo-connector/server.mjs"; exit 1; }
+
       - name: Check versions agree
         run: |
           v=$(node -p "require('./manifest.json').version")

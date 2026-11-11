@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "odoo-connector",
   "display_name": "Odoo Connector",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Query and edit your Odoo database through Claude via Odoo's built-in JSON-RPC API. No server-side module required.",
   "long_description": "Connects Claude to any Odoo 14–18 instance using Odoo's built-in external API (JSON-RPC over HTTPS). Nothing is installed on the Odoo server — the connector runs locally and authenticates as your user with an API key, so it can do exactly what your Odoo permissions allow. Save several Odoo instances at once in a profiles file; tell Claude which to use or let it pick from the profile descriptions. No profile is a default. Provides tools to introspect models and fields, search and read records, count, call arbitrary model methods, and (optionally) create/update/delete. Write operations are blocked per profile unless that profile sets allow_write.",
   "author": {
@@ -102,8 +102,9 @@
     "profiles_file": {
       "type": "file",
       "title": "Profiles file",
-      "description": "JSON file of saved Odoo profiles: { \"name\": { \"description\", \"url\", \"db\", \"username\", \"api_key\", \"allow_write\" } }. Keys are stored in this file in plain text; keep it outside any repo.",
-      "required": true
+      "description": "JSON file of saved Odoo profiles: { \"name\": { \"description\", \"url\", \"db\", \"username\", \"api_key\", \"allow_write\" } }. Keys are stored in this file in plain text; keep it outside any repo. Leave empty for the default: %APPDATA%\\odoo-connector\\profiles.json on Windows, ~/.config/odoo-connector/profiles.json elsewhere.",
+      "required": false,
+      "default": ""
     }
   },
   "privacy_policies": []

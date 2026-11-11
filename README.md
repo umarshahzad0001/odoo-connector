@@ -8,15 +8,25 @@ Built and used against Odoo 18 Enterprise. Earlier versions that still serve `/j
 
 ## Install
 
+There are two ways to run it. Both use the same server and the same profiles file, so you can have both.
+
+- **Claude Code plugin** (Windows, macOS, Linux): available in every Claude Code session on that machine, in a terminal, an IDE or the desktop app's Code tab. See [Claude Code](#claude-code-windows-macos-linux).
+- **Claude Desktop extension**: available in Claude Desktop chats and the desktop app's Code tab. The steps below.
+
 You need Claude Desktop and an Odoo user with an API key.
 
 **1. Get an API key from Odoo.** In Odoo, open your user menu, then Preferences, then Account Security, then New API Key. Copy it somewhere; Odoo only shows it once.
 
-**2. Get the extension file.** Download `odoo-connector-0.2.0.mcpb` from the [latest release](https://github.com/umarshahzad0001/odoo-connector/releases/latest), or build it yourself (see [Build from source](#build-from-source)).
+**2. Get the extension file.** Download `odoo-connector-<version>.mcpb` from the [latest release](https://github.com/umarshahzad0001/odoo-connector/releases/latest), or build it yourself (see [Build from source](#build-from-source)).
 
 **3. Install it.** Double-click the `.mcpb` file, or drag it into Claude Desktop's Settings, Extensions page, and click Install.
 
-**4. Create a profiles file.** This is a JSON file that holds your Odoo logins. Put it somewhere outside any git repository or synced folder, because the API keys are stored in it as plain text. On Windows, `%APPDATA%\odoo-connector\profiles.json` works well:
+**4. Create a profiles file.** This is a JSON file that holds your Odoo logins. Put it somewhere outside any git repository or synced folder, because the API keys are stored in it as plain text. The connector looks for it here unless you name another path:
+
+- Windows: `%APPDATA%\odoo-connector\profiles.json`
+- macOS and Linux: `~/.config/odoo-connector/profiles.json` (or `$XDG_CONFIG_HOME/odoo-connector/profiles.json` when that is set)
+
+You can skip writing it by hand: the `odoo_add_profile` tool and the profiles pane both create it.
 
 ```json
 {
@@ -41,15 +51,32 @@ You need Claude Desktop and an Odoo user with an API key.
 
 `db` is the exact database name from Odoo's login screen. `username` is your login, usually an email address. `allow_write` is optional and defaults to `false`.
 
-**5. Point the extension at the file.** In Claude Desktop, open the extension's settings and set **Profiles file** to the full path of the file you just made.
+**5. Point the extension at the file, if it isn't in the default place.** In Claude Desktop, open the extension's settings and set **Profiles file** to its full path. Leave the setting empty to use the default path above.
 
 **6. Start a new chat and try it.** Ask Claude to "list my Odoo profiles", then "who am I logged in as on staging?". If a login fails, the error names the profile.
 
 If you used 0.1.x, note that its URL, database, login and key settings are gone. Move them into a profile in the file above.
 
+### Claude Code (Windows, macOS, Linux)
+
+The `odoo-connector` plugin runs the server in every Claude Code session on the machine it's installed on. The server comes bundled as one file, so there is no `npm install`, but the machine needs Node.js 18 or newer on its PATH.
+
+Run these once in a terminal on each machine:
+
+```
+claude plugin marketplace add umarshahzad0001/odoo-connector
+claude plugin install odoo-connector@odoo-connector
+```
+
+Then save a profile: ask Claude to "add an Odoo profile", or create the profiles file by hand (see step 4 above for where it goes). Start a new session and ask Claude to "list my Odoo profiles". The tools show up as `mcp__plugin_odoo-connector_odoo__*`.
+
+To use a profiles file somewhere else, set `ODOO_PROFILES_FILE` in the environment Claude Code starts from.
+
+Cloud sessions and SSH sessions run on another machine, so install the plugin and save the profiles there too.
+
 ### Other MCP clients
 
-The server is a plain stdio MCP server, so it isn't tied to Claude Desktop. Point any client at it with the profiles path in an environment variable:
+The server is a plain stdio MCP server, so it isn't tied to Claude. Point any client at it. `ODOO_PROFILES_FILE` is optional; without it the default path above is used:
 
 ```json
 {
@@ -102,7 +129,7 @@ It uses Claude Code's function-hook mod API, which is early access and may chang
 /plugin install odoo-profiles --marketplace umarshahzad0001/odoo-connector
 ```
 
-The install command doesn't run in the Desktop Code tab, but a plugin installed this way loads there too. To try it straight from a checkout instead, start Claude Code with `claude --plugin-dir claude-mod/odoo-profiles`, or set `CLAUDE_CODE_PLUGIN_DIRS` to that folder. On Windows it edits `%APPDATA%\odoo-connector\profiles.json` by default; set the mod's `profiles_file` option if yours lives elsewhere (and on any other system). The call lines only appear for tools named `mcp__Odoo_Connector__*`, which is what Claude Desktop calls this extension.
+The install command doesn't run in the Desktop Code tab, but a plugin installed this way loads there too. To try it straight from a checkout instead, start Claude Code with `claude --plugin-dir claude-mod/odoo-profiles`, or set `CLAUDE_CODE_PLUGIN_DIRS` to that folder. By default it edits the same file the connector reads (see step 4 above); set the mod's `profiles_file` option if yours lives elsewhere. The call lines appear for the desktop extension (`mcp__Odoo_Connector__*`), the plugin (`mcp__plugin_odoo-connector_odoo__*`), and an `mcpServers` entry whose name contains "odoo".
 
 ## Build from source
 
@@ -112,6 +139,8 @@ You need Node.js 18 or newer.
 npm ci
 npm test
 ```
+
+After changing `server/index.js`, run `npm run build:plugin` and commit `plugins/odoo-connector/server.mjs`; the release workflow fails if the two differ.
 
 The tests start the real server against two fake Odoo instances and check profile routing, the "profile required" refusal, the write guard and the add/update/remove tools. They don't need a real Odoo.
 
