@@ -62,6 +62,9 @@ jobs:
           unzip -q "$FILE" -d "$d"
           mkdir "$d/test"
           cp test/profiles.test.mjs "$d/test/"
+          # the plugin's bundle is not in the .mcpb, but one test compares it with the packed server
+          mkdir -p "$d/plugins/odoo-connector"
+          cp plugins/odoo-connector/server.mjs "$d/plugins/odoo-connector/"
           cd "$d" && node --test test/profiles.test.mjs
 
       - uses: actions/upload-artifact@v4
